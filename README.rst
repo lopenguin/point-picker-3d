@@ -22,5 +22,12 @@ Example Usage
 
 >>> python main.py
 
+Mouse/keyboard operations:
+
+* *Rotate*: left-click and drag
+* *Pan*: hold the wheel down and drag
+* *Zoom*: wheel
+* *Pick a point*: press P
+
 .. image:: examples/example_1.PNG
    :width: 600
