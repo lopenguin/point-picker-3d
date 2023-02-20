@@ -80,7 +80,7 @@ class Ui(QMainWindow):
 
             actor = self.plot_box.plotter.add_point_labels(
                 [point],
-                [f"({point[0]:.1f}, {point[1]:.1f}, {point[2]:.1f})"],
+                [f"({point[0]:.2f}, {point[1]:.2f}, {point[2]:.2f})"],
                 name=point,
                 render_points_as_spheres=True,
                 reset_camera=False,
