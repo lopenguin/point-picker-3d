@@ -72,7 +72,9 @@ class Ui(QMainWindow):
         except FileNotFoundError:
             self._display_error_window()
         else:
+            path = Path(self.import_geometry_box.lineedit.text())
             self.plot_box.plotter.add_mesh(mesh, show_edges=True)
+            self.plot_box.plotter.add_text(f"{path.name}", font_size=6)
 
         def callback(point):
 
@@ -165,7 +167,7 @@ class ActionsBox:
     """Actions box."""
 
     def __init__(
-        self, import_lineedit: QLineEdit, draw: Callable, export: Callable
+            self, import_lineedit: QLineEdit, draw: Callable, export: Callable
     ) -> None:
         self._lineedit = import_lineedit
         self._draw = draw
