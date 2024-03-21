@@ -9,6 +9,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable, List
 
+import imageio
+
 import numpy as np
 import pyvista as pv
 from PyQt5.QtGui import QIcon
@@ -23,6 +25,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
 )
 from pyvistaqt import QtInteractor
+from vtkmodules.vtkCommonColor import vtkNamedColors
 
 
 class Ui(QMainWindow):
@@ -66,35 +69,108 @@ class Ui(QMainWindow):
 
         self.plot_box.plotter.clear()
         self.selected_points = []
+        self.actors = {}
 
         try:
             mesh = pv.read(self.import_geometry_box.lineedit.text())
+
+            input_file_name2 = self.import_geometry_box.lineedit.text()
+            texture = pv.numpy_to_texture(imageio.imread(input_file_name2[:-3] + "png"))
         except FileNotFoundError:
             self._display_error_window()
         else:
             path = Path(self.import_geometry_box.lineedit.text())
-            self.plot_box.plotter.add_mesh(mesh, show_edges=True)
+            self.plot_box.plotter.add_mesh(mesh, show_edges=True, texture=texture)
             self.plot_box.plotter.add_text(f"{path.name}", font_size=6)
 
         def callback(point):
-
-            actor = self.plot_box.plotter.add_point_labels(
-                [point],
-                [f"({point[0]:.2f}, {point[1]:.2f}, {point[2]:.2f})"],
-                name=point,
-                render_points_as_spheres=True,
-                reset_camera=False,
-                fill_shape=False,
-                shape=None,
-            )
-            actor.SetVisibility(False)
-
             if is_point_selected(self.selected_points, point):
-                remove_point(self.selected_points, point)
+                idx = remove_point(self.selected_points, point)
+                actor = self.actors[tuple(point)]
+                actor = self.plot_box.plotter.add_point_labels(
+                    [point],
+                    [""],
+                    name=point,
+                    render_points_as_spheres=True,
+                    reset_camera=False,
+                    shape_opacity=0.8,
+                    text_color='w',
+                    font_size=48,
+                    # fill_shape=False,
+                    # shape=None,
+                    point_color='black',
+                    point_size=0,
+                    show_points=False,
+                    always_visible=True,
+                )
                 actor.SetVisibility(False)
+                self.actors[tuple(point)] = actor
+
+                for i in range(idx,len(self.selected_points)):
+                    point = self.selected_points[i]
+                    actor = self.actors[tuple(point)]
+                    actor = self.plot_box.plotter.add_point_labels(
+                        [point],
+                        [f"{i+1}"],
+                        name=point,
+                        render_points_as_spheres=True,
+                        reset_camera=False,
+                        shape_opacity=0.8,
+                        text_color='w',
+                        font_size=48,
+                        # fill_shape=False,
+                        # shape=None,
+                        point_color='red',
+                        point_size=20,
+                        always_visible=True,
+                    )
+                    actor.SetVisibility(True)
+                    self.actors[tuple(point)] = actor
             else:
                 self.selected_points.append(point)
+
+                number = len(self.selected_points)
+                actor = self.plot_box.plotter.add_point_labels(
+                    [point],
+                    [f"{number}"],
+                    name=point,
+                    render_points_as_spheres=True,
+                    reset_camera=False,
+                    shape_opacity=0.8,
+                    text_color='w',
+                    font_size=48,
+                    # fill_shape=False,
+                    # shape=None,
+                    point_color='red',
+                    point_size=20,
+                    always_visible=True,
+                )
+                self.actors[tuple(point)] = actor
                 actor.SetVisibility(True)
+
+            # actor = self.plot_box.plotter.add_point_labels(
+            #     [point],
+            #     [f"({point[0]:.2f}, {point[1]:.2f}, {point[2]:.2f})"],
+            #     name=point,
+            #     render_points_as_spheres=True,
+            #     reset_camera=False,
+            #     shape_opacity=0.8,
+            #     text_color='w',
+            #     font_size=48,
+            #     # fill_shape=False,
+            #     # shape=None,
+            #     point_color='red',
+            #     point_size=20,
+            # )
+            # actor.SetVisibility(False)
+
+            # if is_point_selected(self.selected_points, point):
+            #     remove_point(self.selected_points, point)
+            #     actor.SetVisibility(False)
+            #     actor.VisibilityOff()
+            # else:
+            #     self.selected_points.append(point)
+            #     actor.SetVisibility(True)
 
         self.plot_box.plotter.enable_point_picking(
             callback, show_message=False, show_point=False
@@ -284,7 +360,7 @@ def is_point_selected(selected_points: List[np.ndarray], point: np.ndarray) -> b
     return any([np.allclose(point_, point) for point_ in selected_points])
 
 
-def remove_point(selected_points: List[np.ndarray], point: np.ndarray) -> None:
+def remove_point(selected_points: List[np.ndarray], point: np.ndarray) -> Int:
     """
     Remove array from list.
 
@@ -300,3 +376,4 @@ def remove_point(selected_points: List[np.ndarray], point: np.ndarray) -> None:
         index += 1
     if index != size:
         selected_points.pop(index)
+    return index
